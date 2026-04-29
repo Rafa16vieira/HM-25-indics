@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Indicadores Hospitalares 2025 — Hospital da Mulher Dra. Nise da Silveira</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+  :root {
+    --bg: #f5f0eb;
+    --surface: #ffffff;
+    --ink: #1a1410;
+    --muted: #7a6f65;
+    --accent1: #c05cb7;
+    --accent2: #2980b9;
+    --accent3: #27ae60;
+    --accent4: #e67e22;
+    --accent5: #8e44ad;
+    --accent6: #16a085;
+    --border: #e0d8cf;
+    --shadow: 0 2px 20px rgba(0,0,0,0.07);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+  }
+
+  header {
+    background: var(--ink);
+    color: #f5f0eb;
+    padding: 40px 48px 36px;
+    border-bottom: 4px solid var(--accent1);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .logo-img {
+    max-height: 80px; 
+    width: auto; 
+    margin-bottom: 20px;
+    filter: brightness(1.1); /* Slightly brightens logo against dark background */
+  }
+
+  header h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(1.6rem, 3vw, 2.4rem);
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+    margin-bottom: 8px;
+  }
+
+  header p {
+    font-size: 0.9rem;
+    color: #b0a89e;
+    font-weight: 300;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 48px 32px;
+  }
+
+  .section-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 28px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(560px, 1fr));
+    gap: 28px;
+    margin-bottom: 48px;
+  }
+
+  .card {
+    background: var(--surface);
+    border-radius: 4px;
+    padding: 28px 28px 24px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+    animation: fadeUp 0.5s ease both;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .card-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.15rem;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+    margin-bottom: 4px;
+  }
+
+  .card-total {
+    font-size: 0.82rem;
+    color: var(--muted);
+    margin-bottom: 20px;
+    font-weight: 400;
+  }
+
+  .card-total strong {
+    color: var(--ink);
+    font-weight: 600;
+  }
+
+  .chart-wrap {
+    position: relative;
+    height: 260px;
+  }
+
+  .legend-custom {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.78rem;
+    color: var(--muted);
+  }
+
+  .legend-dot {
+    width: 10px; height: 10px;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+
+  .legend-val {
+    font-weight: 600;
+    color: var(--ink);
+  }
+
+  canvas { display: block; }
+</style>
+</head>
+<body>
+
+<header>
+  <!-- Direct link to the image provided -->
+  <img src="https://i.imgur.com/gdfsViK.png" alt="Logo do Hospital da Mulher Dra. Nise da Silveira" class="logo-img">
+  <h1>Relatório de Indicadores Hospitalares</h1>
+  <p>Hospital da Mulher Dra. Nise da Silveira &nbsp;·&nbsp; Exercício 2025</p>
+</header>
+
+<div class="container">
+  <div class="section-label">Indicadores Mensais — Todos os Setores</div>
+  <div class="grid" id="charts-grid"></div>
+</div>
+
+<script>
+const MESES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+const COLORS = ['#C8A2C8','#9966CC','#D473D4','#7A4F9A','#8e44ad','#C8A2C8','#FF6FFF','#1a5276','#196f3d','#7d6608','#512e5f','#0e6655'];
+
+const indicators = [
+  {
+    title: 'Atendimento Ambulatorial',
+    fonte: 'Registro Hosp.',
+    series: [{ label: 'Atendimentos', color: COLORS[0], data: [1420,1405,1388,1256,1225,891,1267,1464,1618,1522,1196,1176] }]
+  },
+  {
+    title: 'Internações',
+    fonte: 'Registro Hosp.',
+    series: [{ label: 'Internações', color: COLORS[1], data: [877,912,1019,941,1024,944,1015,1026,998,913,915,914] }]
+  },
+  {
+    title: 'Partos Cesárias',
+    fonte: 'Centro Cirúrgico',
+    series: [{ label: 'Cesárias', color: COLORS[2], data: [131,126,148,162,171,146,139,140,151,129,121,115] }]
+  },
+  {
+    title: 'Partos Normais',
+    fonte: 'Maternidade',
+    series: [{ label: 'Partos Normais', color: COLORS[3], data: [156,158,147,186,205,179,188,182,174,152,159,154] }]
+  },
+  {
+    title: 'Cirurgias Eletivas',
+    fonte: 'Centro Cirúrgico',
+    series: [{ label: 'Cirurgias Eletivas', color: COLORS[4], data: [179,184,192,158,135,101,133,164,130,209,193,143] }]
+  },
+  {
+    title: 'Cirurgias Emergências / Urgências',
+    fonte: 'Centro Cirúrgico',
+    series: [{ label: 'Cirurgias Urgência', color: COLORS[5], data: [177,131,203,198,205,182,180,170,135,166,175,164] }]
+  },
+  {
+    title: 'Altas',
+    fonte: 'Registro Hosp.',
+    series: [{ label: 'Altas', color: COLORS[6], data: [544,545,647,563,701,611,789,672,635,626,599,600] }]
+  },
+  {
+    title: 'Transferências',
+    fonte: 'Registro Hosp.',
+    series: [{ label: 'Transferências', color: COLORS[0], data: [180,161,175,197,263,190,153,151,184,169,175,184] }]
+  },
+  {
+    title: 'Exames Laboratoriais',
+    fonte: 'Laboratório',
+    series: [{ label: 'Exames Lab.', color: COLORS[1], data: [22427,23828,25050,25621,26144,26438,32946,31495,29256,28376,26046,24440] }]
+  },
+  {
+    title: 'Classificação de Risco',
+    fonte: 'Maternidade',
+    series: [{ label: 'Classificações', color: COLORS[2], data: [1710,1597,1744,1733,1849,1482,1553,1522,1496,1502,1476,1557] }]
+  },
+  {
+    title: 'UCI',
+    fonte: 'RVVS',
+    series: [{ label: 'UCI', color: COLORS[3], data: [42,36,39,40,44,43,31,38,39,41,45,42] }]
+  },
+  {
+    title: 'UTI Adulto',
+    fonte: 'Coord. de Enf.',
+    series: [{ label: 'UTI Adulto', color: COLORS[4], data: [49,44,42,37,54,44,34,59,44,25,11,18] }]
+  },
+  {
+    title: 'UTI Pediátrica',
+    fonte: 'Coord. da UTI',
+    series: [{ label: 'UTI Ped.', color: COLORS[5], data: [19,19,39,27,35,45,49,51,32,31,39,32] }]
+  },
+  {
+    title: 'Raio X',
+    fonte: 'Radiologia',
+    series: [{ label: 'Raio X', color: COLORS[6], data: [195,184,236,241,257,256,309,261,215,213,254,264] }]
+  },
+  {
+    title: 'Ultrassonografia',
+    fonte: 'Radiologia',
+    series: [{ label: 'Ultrassonografia', color: COLORS[0], data: [1073,929,1247,1139,1084,807,1091,1066,1004,990,747,1070] }]
+  },
+  {
+    title: 'Tomografia',
+    fonte: 'Radiologia',
+    series: [
+      { label: 'Total', color: COLORS[1], data: [657,726,726,546,975,517,797,510,780,724,414,474] },
+      { label: 'Com Contraste', color: COLORS[2], data: [44,80,76,90,110,75,61,46,52,25,43,64] }
+    ]
+  },
+  {
+    title: 'Eletrocardiograma',
+    fonte: 'Registro Hosp.',
+    series: [{ label: 'ECG', color: COLORS[3], data: [140,140,154,137,148,69,109,125,136,134,153,87] }]
+  },
+  {
+    title: 'Mamografia',
+    fonte: 'Radiologia',
+    series: [{ label: 'Mamografia', color: COLORS[4], data: [312,418,326,422,391,348,432,314,452,1117,439,386] }]
+  },
+  {
+    title: 'Ecocardiograma',
+    fonte: 'Radiologia',
+    series: [{ label: 'Ecocardiograma', color: COLORS[5], data: [39,51,32,45,90,94,71,53,45,66,82,56] }]
+  },
+  {
+    title: 'Óbito',
+    fonte: 'Registro Hosp.',
+    series: [{ label: 'Óbitos', color: COLORS[6], data: [27,24,29,23,24,16,27,23,19,18,14,17] }]
+  },
+  {
+    title: 'Curetagem',
+    fonte: 'Centro Cirúrgico',
+    series: [{ label: 'Curetagem', color: COLORS[0], data: [35,34,38,33,23,25,34,22,23,27,37,20] }]
+  },
+  {
+    title: 'Ectópica',
+    fonte: 'Centro Cirúrgico',
+    series: [{ label: 'Ectópica', color: COLORS[1], data: [6,11,7,4,6,9,3,5,5,11,9,9] }]
+  },
+  {
+    title: 'Frenotomia',
+    fonte: 'Odonto',
+    series: [{ label: 'Frenôtomia', color: COLORS[2], data: [0,0,0,0,0,0,0,0,0,0,0,0] }]
+  },
+  {
+    title: 'Atendimento Endometriose',
+    fonte: 'Registro Hosp.',
+    series: [{ label: 'Atendimentos', color: COLORS[3], data: [52,49,15,17,45,64,32,37,69,19,36,56] }]
+  },
+  {
+    title: 'Cirurgia de Endometriose',
+    fonte: 'Centro Cirúrgico',
+    series: [{ label: 'Cirurgias', color: COLORS[4], data: [0,0,0,0,0,0,0,0,0,0,0,0] }]
+  },
+  {
+    title: 'Amamentação',
+    fonte: 'Maternidade',
+    series: [
+      { label: 'Coletivos', color: COLORS[5], data: [856,904,1067,1072,1170,817,508,486,1051,781,710,670] },
+      { label: 'Individuais', color: COLORS[6], data: [426,403,480,456,505,833,1125,1048,589,419,382,348] }
+    ]
+  },
+  {
+    title: 'DIU',
+    fonte: 'Registro Hosp.',
+    series: [{ label: 'DIU Ambul.', color: COLORS[0], data: [72,93,61,45,69,46,65,42,71,72,48,46] }]
+  },
+  {
+    title: 'Atendimentos Oncológicos',
+    fonte: 'Oncologia',
+    series: [{ label: 'Atendimentos', color: COLORS[1], data: [15,20,16,32,16,8,5,4,2,5,3,2] }]
+  },
+  {
+    title: 'Exames Laboratoriais Oncológicos',
+    fonte: 'Oncologia',
+    series: [{ label: 'Exames', color: COLORS[2], data: [23,215,28,175,59,27,0,26,22,25,11,0] }]
+  },
+  {
+    title: 'Cirurgias PMAE',
+    fonte: 'Centro Cirúrgico',
+    series: [{ label: 'Cirurgias', color: COLORS[3], data: [0,13,26,9,12,8,28,53,40,51,62,54] }]
+  },
+  {
+    title: 'ALCOM',
+    fonte: 'ALCOM',
+    series: [{ label: 'ALCOM', color: COLORS[4], data: [407,434,499,502,540,526,580,540,530,450,443,457] }]
+  },
+  {
+    title: 'Urgência Ginecológica',
+    fonte: 'Urgência',
+    series: [{ label: 'Atendimentos', color: COLORS[5], data: [23,13,25,23,32,29,23,25,35,32,26,24] }]
+  },
+  {
+    title: 'CPN (Centro de Parto Normal)',
+    fonte: 'Maternidade',
+    series: [{ label: 'CPN', color: COLORS[6], data: [221,227,267,267,257,215,222,242,258,208,212,213] }]
+  },
+  {
+    title: 'Reabordagem C. Geral',
+    fonte: 'NIR',
+    series: [{ label: 'Reabordagens', color: COLORS[0], data: [0,1,0,0,0,0,23,0,12,4,9,3] }]
+  },
+  {
+    title: 'Reabordagem Maternidade',
+    fonte: 'NIR',
+    series: [{ label: 'Reabordagens', color: COLORS[1], data: [3,2,4,1,4,0,5,2,10,3,3,5] }]
+  }
+];
+
+const grid = document.getElementById('charts-grid');
+
+indicators.forEach((ind, idx) => {
+  const delay = (idx % 6) * 80;
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.style.animationDelay = delay + 'ms';
+  const accentColor = ind.series[0].color;
+  card.style.borderTop = `3px solid ${accentColor}`;
+  const totals = ind.series.map(s => s.data.reduce((a, b) => a + b, 0));
+  const grandTotal = totals.reduce((a, b) => a + b, 0);
+  const totalText = ind.series.length > 1
+    ? ind.series.map((s, i) => `${s.label}: <strong>${totals[i].toLocaleString('pt-BR')}</strong>`).join(' &nbsp;|&nbsp; ')
+    : `Total anual: <strong>${grandTotal.toLocaleString('pt-BR')}</strong>`;
+
+  card.innerHTML = `
+    <div class="card-title">${ind.title}</div>
+    <div class="card-total">${totalText}</div>
+    <div class="chart-wrap"><canvas id="c${idx}"></canvas></div>
+    <div class="legend-custom" id="leg${idx}"></div>
+    <div class="fonte" style="position:absolute;bottom:12px;right:16px;font-size:0.7rem;color:var(--muted);font-weight:500;">Fonte: ${ind.fonte}</div>
+  `;
+  grid.appendChild(card);
+
+  const legEl = card.querySelector(`#leg${idx}`);
+  if (ind.series.length > 1) {
+    ind.series.forEach((s, si) => {
+      const total = s.data.reduce((a,b)=>a+b,0);
+      const item = document.createElement('div');
+      item.className = 'legend-item';
+      item.innerHTML = `<span class="legend-dot" style="background:${s.color}"></span><span>${s.label}: <span class="legend-val">${total.toLocaleString('pt-BR')}</span></span>`;
+      legEl.appendChild(item);
+    });
+    MESES.forEach((m, mi) => {
+      ind.series.forEach((s, si) => {
+        const v = s.data[mi];
+        const item = document.createElement('div');
+        item.className = 'legend-item';
+        item.innerHTML = `<span class="legend-dot" style="background:${s.color};opacity:0.6"></span><span>${m} ${s.label.split(' ')[0]}: <span class="legend-val">${v.toLocaleString('pt-BR')}</span></span>`;
+        legEl.appendChild(item);
+      });
+    });
+  } else {
+    const total = ind.series[0].data.reduce((a,b)=>a+b,0) || 1;
+    MESES.forEach((m, mi) => {
+      const v = ind.series[0].data[mi];
+      const item = document.createElement('div');
+      item.className = 'legend-item';
+      item.innerHTML = `<span class="legend-dot" style="background:${ind.series[0].color}"></span><span>${m}: <span class="legend-val">${v.toLocaleString('pt-BR')}</span></span>`;
+      legEl.appendChild(item);
+    });
+  }
+
+  const ctx = document.getElementById('c' + idx).getContext('2d');
+  const allSeriesMax = Math.max(...ind.series.flatMap(s => s.data));
+  const datasets = ind.series.map((s, si) => {
+    return {
+      label: s.label,
+      data: s.data,
+      backgroundColor: s.data.map(v => {
+        const intensity = allSeriesMax > 0 ? 0.45 + 0.55*(v/allSeriesMax) : 0.7;
+        return hexToRgba(s.color, intensity);
+      }),
+      borderColor: s.color,
+      borderWidth: 1.5,
+      borderRadius: 3,
+      borderSkipped: false,
+    };
+  });
+
+  new Chart(ctx, {
+    type: 'bar',
+    data: { labels: MESES, datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: ind.series.length > 1, position: 'top',
+          labels: { font: { family: 'DM Sans', size: 11 }, boxWidth: 12, padding: 12 } },
+        tooltip: {
+          callbacks: {
+            label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y.toLocaleString('pt-BR')}`,
+            afterLabel: ctx => {
+              const total = ctx.dataset.data.reduce((a,b)=>a+b,0) || 1;
+              const pct = ((ctx.parsed.y / total)*100).toFixed(1);
+              return ` (${pct}% do total anual)`;
+            }
+          }
+        }
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { family: 'DM Sans', size: 10 }, color: '#7a6f65' } },
+        y: { grid: { color: '#ece7e0', lineWidth: 1 }, ticks: { font: { family: 'DM Sans', size: 10 }, color: '#7a6f65',
+            callback: v => v >= 1000 ? (v/1000).toFixed(0)+'k' : v } }
+      }
+    },
+    plugins: [{
+      id: 'pctLabels',
+      afterDatasetsDraw(chart) {
+        const { ctx, data } = chart;
+        const total_per_series = data.datasets.map(ds => ds.data.reduce((a,b)=>a+b,0) || 1);
+        ctx.save();
+        data.datasets.forEach((ds, di) => {
+          const meta = chart.getDatasetMeta(di);
+          meta.data.forEach((bar, bi) => {
+            const v = ds.data[bi];
+            if (!v || v === 0) return;
+            const pct = ((v / total_per_series[di]) * 100).toFixed(1) + '%';
+            ctx.fillStyle = '#3a3028';
+            ctx.font = '500 9px "DM Sans", sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'bottom';
+            ctx.fillText(pct, bar.x, bar.y - 3);
+          });
+        });
+        ctx.restore();
+      }
+    }]
+  });
+});
+
+function hexToRgba(hex, alpha) {
+  const r = parseInt(hex.slice(1,3),16);
+  const g = parseInt(hex.slice(3,5),16);
+  const b = parseInt(hex.slice(5,7),16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+</script>
+</body>
+</html>
